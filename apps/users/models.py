@@ -1,11 +1,17 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from tinymce.models import HTMLField
+from itsdangerous import TimedJSONWebSignatureSerializer
 
+from dailyfresh import settings
 from utils.models import BaseModel
 
 
 class User(BaseModel, AbstractUser):
+    def generate_active_token(self):
+        s = TimedJSONWebSignatureSerializer(settings.SECRET_KEY, 3600*24)
+        dates = s.dumps({'confirm': self.id}) # type: bytes
+        return dates.decode()
 
     class Meta:
         db_table = 'df_user'
