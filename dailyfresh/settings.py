@@ -115,7 +115,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -131,3 +131,19 @@ EMAIL_PORT = 25                             # 邮箱服务器端口（默认都�
 EMAIL_HOST_USER = 'wenhaogud@163.com'       # 发件人（天天生鲜官方邮箱账号）
 EMAIL_HOST_PASSWORD = 'python8'           # 邮箱客户端授权码，非邮箱登录密码
 EMAIL_FROM = '天天生鲜<wenhaogud@163.com>'   # 收件人接收到邮件后，显示在‘发件人’中的内容，如下图
+
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/2",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": ""
+        }
+    }
+}
+
+# session数据缓存到Redis中
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"

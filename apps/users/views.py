@@ -1,4 +1,6 @@
+from django.contrib.auth import authenticate, login, logout
 from django.core.mail import send_mail
+from django.core.urlresolvers import reverse
 from django.db import IntegrityError
 from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
@@ -60,8 +62,10 @@ from celery_tasks.tasks import send_active_mail
 from dailyfresh import settings
 
 
-def login(request):
-    return render(request, 'login.html')
+#
+#
+# def login(request):
+#     return render(request, 'login.html')
 
 
 class RegisterView(View):
@@ -144,3 +148,58 @@ class ActiveView(View):
         user_id = dict_date.get('confirm')
         User.objects.filter(id=user_id).update(is_active=True)
         return HttpResponse('激活成功')
+
+
+class LoginView(View):
+    def get(self, request):
+        return render(request, 'login.html')
+
+    def post(self, request):
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        remember = request.POST.get('remember')
+        print('11111', username, password)
+        if not all([username, password]):
+            context = {'errmsg': '用户名或密码不能为空'}
+            return render(request, 'login.html', context)
+        user = authenticate(username=username, password=password)
+        if user is None:
+            context = {'errmsg': '用户名或密码错误'}
+            return render(request, 'login.html', context)
+        if not user.is_active:
+            context = {'errmsg': '用户未激活'}
+            return render(request, 'login.html', context)
+
+        login(request, user)
+        if remember != 'on':
+            request.session.set_expiry(0)
+        else:
+            request.session.set_expiry(None)
+        return redirect(reverse('goods:index'))
+
+
+class LogoutView(View):
+    def get(self, request):
+        logout(request)
+        return redirect(reverse('goods:index'))
+
+
+class UserAddressView(View):
+    """用户中心--地址界面"""
+
+    def get(self, request):
+        return render(request, 'user_center_site.html')
+
+
+class UserOrderView(View):
+    """用户中心--订单显示界面"""
+
+    def get(self, request):
+        return render(request, 'user_center_order.html')
+
+
+class UserInfoView(View):
+    """用户中心:个人信息界面"""
+
+    def get(self, request):
+        return render(request, 'user_center_info.html')

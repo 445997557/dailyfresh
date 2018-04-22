@@ -1,6 +1,8 @@
 from django.http.response import HttpResponse
 from django.shortcuts import render
+from django.views.generic.base import View
 
-# Create your views here.
-def index(request):
-    return HttpResponse('首页')
+
+class IndexView(View):
+    def get(self, request):
+        return render(request, 'index.html')
