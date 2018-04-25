@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.db import IntegrityError
@@ -7,9 +8,12 @@ from django.shortcuts import render, redirect
 import re
 
 from django.views.generic import View
+from django_redis import get_redis_connection
 from itsdangerous import TimedJSONWebSignatureSerializer, SignatureExpired
+from redis import StrictRedis
 
-from apps.users.models import User
+from apps.goods.models import GoodsSKU
+from apps.users.models import User, Address
 
 # def register(request):
 #     context = {}
@@ -61,11 +65,11 @@ from apps.users.models import User
 from celery_tasks.tasks import send_active_mail
 from dailyfresh import settings
 
-
 #
 #
 # def login(request):
 #     return render(request, 'login.html')
+from utils.commont import LoginRequiredMixin
 
 
 class RegisterView(View):
@@ -158,7 +162,6 @@ class LoginView(View):
         username = request.POST.get('username')
         password = request.POST.get('password')
         remember = request.POST.get('remember')
-        print('11111', username, password)
         if not all([username, password]):
             context = {'errmsg': '用户名或密码不能为空'}
             return render(request, 'login.html', context)
@@ -175,7 +178,12 @@ class LoginView(View):
             request.session.set_expiry(0)
         else:
             request.session.set_expiry(None)
-        return redirect(reverse('goods:index'))
+
+        next = request.GET.get('next')
+        if next:
+            return redirect(next)
+        else:
+            return redirect(reverse('goods:index'))
 
 
 class LogoutView(View):
@@ -184,22 +192,77 @@ class LogoutView(View):
         return redirect(reverse('goods:index'))
 
 
-class UserAddressView(View):
-    """用户中心--地址界面"""
-
-    def get(self, request):
-        return render(request, 'user_center_site.html')
-
-
-class UserOrderView(View):
-    """用户中心--订单显示界面"""
-
-    def get(self, request):
-        return render(request, 'user_center_order.html')
-
-
-class UserInfoView(View):
+class UserInfoView(LoginRequiredMixin, View):
     """用户中心:个人信息界面"""
 
     def get(self, request):
-        return render(request, 'user_center_info.html')
+        strict_redis = get_redis_connection('default')  # type: StrictRedis
+        key = 'history_%s' % request.user.id
+        sku_ids = strict_redis.lrange(key, 0, 4)
+        # skus = GoodsSKU.objects.filter(id__in=sku_id)
+        skus = []
+        for sku_id in sku_ids:
+            sku = GoodsSKU.objects.get(id=sku_id)
+            skus.append(sku)
+
+        try:
+            address = request.user.address_set.latest('create_time')
+        except Exception as e:
+            address = None
+            print(e)
+        context = {
+            'which_page': 1,
+            'address': address,
+            'skus': skus
+        }
+        return render(request, 'user_center_info.html', context)
+
+
+class UserOrderView(LoginRequiredMixin, View):
+    """用户中心--订单显示界面"""
+
+    def get(self, request):
+        # if not request.user.is_authenticated():
+        #     return redirect(reverse('users:login'))
+        context = {
+            'which_page': 2
+        }
+        return render(request, 'user_center_order.html', context)
+
+
+class UserAddressView(LoginRequiredMixin, View):
+    """用户中心--地址界面"""
+
+    def get(self, request):
+        try:
+            address = Address.objects.filter(user=request.user).order_by('-create_time')[0]
+        except:
+            address = None
+        context = {
+            'which_page': 3,
+            'address': address
+        }
+        return render(request, 'user_center_site.html', context)
+
+    def post(self, request):
+        receiver = request.POST.get('receiver')
+        detail = request.POST.get('detail')
+        zip_code = request.POST.get('zip_code')
+        mobile = request.POST.get('mobile')
+        if not all([receiver, detail, mobile]):
+            return render(request, 'user_center_site.html', {'errmsg': '参数不能为空'})
+        Address.objects.create(
+            receiver_name=receiver,
+            receiver_mobile=mobile,
+            detail_addr=detail,
+            zip_code=zip_code,
+            user=request.user
+        )
+        return redirect(reverse('users:address'))
+
+        # @login_required
+        # def address(request):
+        #     context = {
+        #         'which_page': 3
+        #     }
+        #     return render(request, 'user_center_site.html', context)

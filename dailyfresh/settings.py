@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 
-from django.conf.global_settings import STATICFILES_DIRS, AUTH_USER_MODEL
+from django.conf.global_settings import STATICFILES_DIRS, AUTH_USER_MODEL, DEFAULT_FILE_STORAGE
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -147,3 +147,7 @@ CACHES = {
 # session数据缓存到Redis中
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
+
+LOGIN_URL = '/users/login'
+
+DEFAULT_FILE_STORAGE = 'utils.fdfs.storage.FdfsStorage'

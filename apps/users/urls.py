@@ -1,6 +1,7 @@
 
 from django.conf.urls import include, url
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 
 from apps.users import views
 
@@ -18,8 +19,12 @@ urlpatterns = [
     url(r'^login$', views.LoginView.as_view(), name='login'),
 
     url(r'^logout$', views.LogoutView.as_view(), name='logout'),
+
     url(r'^address$', views.UserAddressView.as_view(), name='address'),
+
     url(r'^orders$', views.UserOrderView.as_view(), name='orders'),
+    # url(r'^orders$', login_required(views.UserOrderView.as_view()), name='orders'),
+
     url(r'^$', views.UserInfoView.as_view(), name='info'),
 
 
