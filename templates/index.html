@@ -35,7 +35,7 @@
         <div class="slide fl">
             <ul class="slide_pics">
                 {% for slide_sku in slide_skus %}
-                    <li><img src="{{ slide_sku.image.url }}" alt="幻灯片"></li>
+                    <a href="{% url 'goods:detail' slide_sku.sku.id %}"><li><img src="{{ slide_sku.image.url }}" alt="幻灯片"></li></a>
                 {% endfor %}
             </ul>
             <div class="prev"></div>
@@ -44,7 +44,7 @@
         </div>
         <div class="adv fl">
             {% for promotion in promotions %}
-                <a href="#"><img src="{{ promotion.image.url }}"></a>
+                <a href="{{ promotion.url }}"><img src="{{ promotion.image.url }}"></a>
             {% endfor %}
 
         </div>
@@ -57,7 +57,7 @@
                 <div class="subtitle fl">
                     <span>|</span>
                     {% for c_sku in category.text_skus %}
-                        <a href="#">{{ c_sku.sku.name }}</a>
+                        <a href="{% url 'goods:detail' c_sku.sku.id %}">{{ c_sku.sku.name }}</a>
                     {% endfor %}
 
                 </div>
@@ -69,8 +69,8 @@
                 <ul class="goods_list fl">
                     {% for c_sku in category.image_skus %}
                         <li>
-                            <h4><a href="#">{{ c_sku.sku.name }}</a></h4>
-                            <a href="#"><img src="{{ c_sku.sku.default_image.url }}"></a>
+                            <h4><a href="{% url 'goods:detail' c_sku.sku.id %}">{{ c_sku.sku.name }}</a></h4>
+                            <a href="{% url 'goods:detail' c_sku.sku.id %}"><img src="{{ c_sku.sku.default_image.url }}"></a>
                             <div class="prize">¥ {{ c_sku.sku.price }}</div>
                         </li>
                     {% endfor %}
