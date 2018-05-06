@@ -22,7 +22,7 @@ urlpatterns = [
 
     url(r'^address$', views.UserAddressView.as_view(), name='address'),
 
-    url(r'^orders$', views.UserOrderView.as_view(), name='orders'),
+    url(r'^orders/(\d+)$', views.UserOrderView.as_view(), name='orders'),
     # url(r'^orders$', login_required(views.UserOrderView.as_view()), name='orders'),
 
     url(r'^$', views.UserInfoView.as_view(), name='info'),

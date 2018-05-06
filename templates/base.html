@@ -1,7 +1,8 @@
 <!-- templates/base.html -->
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-{% load staticfiles%}
+{% load staticfiles %}
 
 <head>
     <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
@@ -17,8 +18,8 @@
 </head>
 <body>
 
-    {# 界面顶部的信息栏 #}
-    {% block header %}
+{# 界面顶部的信息栏 #}
+{% block header %}
     <div class="header_con">
         <div class="header">
             <div class="welcome fl">欢迎来到天天生鲜!</div>
@@ -32,10 +33,10 @@
                     </div>
                 {% else %}
                     <div class="login_btn fl">
-                    <a href="{% url 'users:login' %}">登录</a>
-                    <span>|</span>
-                    <a href="{% url 'users:register' %}">注册</a>
-                </div>
+                        <a href="{% url 'users:login' %}">登录</a>
+                        <span>|</span>
+                        <a href="{% url 'users:register' %}">注册</a>
+                    </div>
                 {% endif %}
 
 
@@ -43,53 +44,55 @@
                     <span>|</span>
                     <a href="{% url 'users:info' %}">用户中心</a>
                     <span>|</span>
-                    <a href="">我的购物车</a>
+                    <a href="{% url 'cart:info' %}">我的购物车</a>
                     <span>|</span>
-                    <a href="{% url 'users:orders' %}">我的订单</a>
+                    <a href="{% url 'users:orders' 1 %}">我的订单</a>
                 </div>
             </div>
         </div>
     </div>
-    {% endblock %}
+{% endblock %}
 
-    {# 搜索栏 #}
-    {% block search_bar %}
+{# 搜索栏 #}
+{% block search_bar %}
     <div class="search_bar clearfix">
         <a href="{% url 'goods:index' %}" class="logo fl"><img src="{% static 'images/logo.png' %}"></a>
-        <div class="search_con fl">
-            <input type="text" class="input_text fl" name="" placeholder="搜索商品">
-            <input type="button" class="input_btn fr" name="" value="搜索">
-        </div>
+        <form method="get" action="/search">
+            <div class="search_con fl">
+                <input type="text" class="input_text fl" name="q" placeholder="搜索商品">
+                <input type="submit" class="input_btn fr" name="" value="搜索">
+            </div>
+        </form>
         <div class="guest_cart fr">
-            <a href="#" class="cart_name fl">我的购物车</a>
+            <a href="{% url 'cart:info' %}" class="cart_name fl">我的购物车</a>
             <div class="goods_count fl" id="show_count">{{ cart_count }}</div>
         </div>
     </div>
-    {% endblock %}
+{% endblock %}
 
 
-    {# 主体内容 #}
-    {% block body %}
-    {% endblock %}
+{# 主体内容 #}
+{% block body %}
+{% endblock %}
 
-    {# 版权信息 #}
-    <div class="footer">
-        <div class="foot_link">
-            <a href="#">关于我们</a>
-            <span>|</span>
-            <a href="#">联系我们</a>
-            <span>|</span>
-            <a href="#">招聘人才</a>
-            <span>|</span>
-            <a href="#">友情链接</a>
-        </div>
-        <p>CopyRight © 2016 北京天天生鲜信息技术有限公司 All Rights Reserved</p>
-        <p>电话：010-****888    京ICP备*******8号</p>
+{# 版权信息 #}
+<div class="footer">
+    <div class="foot_link">
+        <a href="#">关于我们</a>
+        <span>|</span>
+        <a href="#">联系我们</a>
+        <span>|</span>
+        <a href="#">招聘人才</a>
+        <span>|</span>
+        <a href="#">友情链接</a>
     </div>
+    <p>CopyRight © 2016 北京天天生鲜信息技术有限公司 All Rights Reserved</p>
+    <p>电话：010-****888 京ICP备*******8号</p>
+</div>
 
-    {# 界面底部js #}
-    {% block bottom_js %}
-    {% endblock %}
+{# 界面底部js #}
+{% block bottom_js %}
+{% endblock %}
 
 </body>
 </html>

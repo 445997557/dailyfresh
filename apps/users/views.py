@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
+from django.core.paginator import Paginator, EmptyPage
 from django.core.urlresolvers import reverse
 from django.db import IntegrityError
 from django.http.response import HttpResponse
@@ -13,6 +14,7 @@ from itsdangerous import TimedJSONWebSignatureSerializer, SignatureExpired
 from redis import StrictRedis
 
 from apps.goods.models import GoodsSKU
+from apps.orders.models import OrderInfo, OrderGoods
 from apps.users.models import User, Address
 
 # def register(request):
@@ -181,6 +183,8 @@ class LoginView(View):
 
         next = request.GET.get('next')
         if next:
+            if next == '/orders/place':
+                return redirect('/cart')
             return redirect(next)
         else:
             return redirect(reverse('goods:index'))
@@ -221,11 +225,29 @@ class UserInfoView(LoginRequiredMixin, View):
 class UserOrderView(LoginRequiredMixin, View):
     """用户中心--订单显示界面"""
 
-    def get(self, request):
+    def get(self, request, page_no):
+
+        orders = OrderInfo.objects.filter(user=request.user).order_by('-create_time')
+        for order in orders:
+            order_skus = OrderGoods.objects.filter(order=order)
+            for order_sku in order_skus:
+                order_sku.amount = order_sku.price * order_sku.count
+            order.status_desc = OrderInfo.ORDER_STATUS.get(order.status)
+            order.total_pay = order.trans_cost + order.total_amount
+            order.order_skus = order_skus
+
+        paginator = Paginator(orders, 2)
+        try:
+            page = paginator.page(page_no)
+        except EmptyPage:
+            page = paginator.page(1)
         # if not request.user.is_authenticated():
         #     return redirect(reverse('users:login'))
         context = {
-            'which_page': 2
+            'which_page': 2,
+            'page': page,
+            'page_range': paginator.page_range,
+
         }
         return render(request, 'user_center_order.html', context)
 

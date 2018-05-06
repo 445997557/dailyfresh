@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.core.paginator import Paginator, EmptyPage
 from django.core.urlresolvers import reverse
 from django.http.response import HttpResponse
 from django.shortcuts import render, redirect
@@ -13,7 +14,7 @@ class BaseCartView(View):
     def get_cart_count(self, request):
         cart_count = 0
         if request.user.is_authenticated():
-            strict_redis = get_redis_connection() # type:StrictRedis
+            strict_redis = get_redis_connection()  # type:StrictRedis
             key = 'cart_{}'.format(request.user.id)
             vals = strict_redis.hvals(key)
             for count in vals:
@@ -40,7 +41,7 @@ class IndexView(BaseCartView):
                 'slide_skus': slide_skus,
                 'promotions': promotions,
             }
-            cache.set('index_page_date', context, 60*30)
+            cache.set('index_page_date', context, 60 * 30)
         else:
             print('有缓存')
             # 获取购物车中的商品数量
@@ -76,7 +77,7 @@ class DetailView(BaseCartView):
             user_id = request.user.id
             # 从redis中获取购物车信息/获取StrictRedis对象
             # redis_conn = StrictRedis()
-            redis_conn = get_redis_connection() # type: StrictRedis
+            redis_conn = get_redis_connection()  # type: StrictRedis
             # 保存用户的历史浏览记录
             # history_用户id: [3, 1, 2]
             # 移除现有的商品浏览记录
@@ -94,3 +95,45 @@ class DetailView(BaseCartView):
                 'cart_count': cart_count,
             }
             return render(request, 'detai.html', context)
+
+
+class ListView(BaseCartView):
+    def get(self, request, category_id, page_num):
+        sort = request.GET.get('sort')
+        try:
+            category = GoodsCategory.objects.get(id=category_id)
+        except GoodsCategory.DoesNotExist:
+            return redirect(reverse('goods:index'))
+        # 查询商品所有类别
+        categories = GoodsCategory.objects.all()
+
+        # 查询该类商品的最新推荐
+        new_skus = GoodsSKU.objects.filter(category=category).order_by('-create_time')[0:2]
+
+        if sort == 'price':
+            skus = GoodsSKU.objects.filter(category=category).order_by('price')
+        elif sort == 'hot':
+            skus = GoodsSKU.objects.filter(category=category).order_by('-sales')
+        else:
+            skus = GoodsSKU.objects.filter(category=category).order_by('id')
+            sort = 'default'
+
+        # 购物车商品数量
+        cart_count = self.get_cart_count(request)
+
+        paginator = Paginator(skus, 2)
+        try:
+            page = paginator.page(page_num)
+        except EmptyPage:
+            page = paginator.page(1)
+
+        context = {
+            'category': category,
+            'categories': categories,
+            'new_skus': new_skus,
+            'page': page,
+            'page_list': paginator.page_range,
+            'sort': sort,
+            'cart_count': cart_count,
+        }
+        return render(request, 'list.html', context)

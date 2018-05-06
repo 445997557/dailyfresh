@@ -21,6 +21,7 @@ urlpatterns = [
     url(r'^users/', include('apps.users.urls', namespace='users')),
     url(r'^cart/', include('apps.cart.urls', namespace='cart')),
     url(r'^orders/', include('apps.orders.urls', namespace='orders')),
+    url(r'^search/', include('haystack.urls')),
     url(r'^', include('apps.goods.urls', namespace='goods')),
     # 包含tinymce urls配置文件
     url(r'^tinymce/', include('tinymce.urls')),

@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'apps.goods',
     'apps.cart',
     'apps.orders',
+    'haystack',
 )
 
 # 配置控件显示样式
@@ -151,3 +152,22 @@ SESSION_CACHE_ALIAS = "default"
 LOGIN_URL = '/users/login'
 
 DEFAULT_FILE_STORAGE = 'utils.fdfs.storage.FdfsStorage'
+
+# 配置haystack框架
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        # 使用whoosh搜索引擎
+        # 'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
+        # 修改： 使用whoosh搜索引擎(使用jiebar中文分词工具)
+        'ENGINE': 'haystack.backends.whoosh_cn_backend.WhooshEngine',
+        # 指定生成的索引库保存在哪个目录下
+        'PATH': os.path.join(BASE_DIR, 'whoosh_index'),
+    }
+}
+# 当添加、修改、删除了数据时，自动生成索引
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+
+
+
+
+

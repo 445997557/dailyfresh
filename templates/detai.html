@@ -14,7 +14,8 @@
 
                     {# 显示所有类别 #}
                     {% for category in categories %}
-                        <li><a href="#" class="{{ category.logo }}">{{ category.name }}</a></li>
+                        <li><a href="{% url 'goods:list' category.id 1 %}"
+                               class="{{ category.logo }}">{{ category.name }}</a></li>
                     {% endfor %}
 
                 </ul>
@@ -32,13 +33,15 @@
     <div class="breadcrumb">
         <a href="#">全部分类</a>
         <span>></span>
-        <a href="#">{{ sku.category.name }}</a>
+        <a href="{% url 'goods:list' sku.category.id 1 %}">{{ sku.category.name }}</a>
         <span>></span>
         <a href="#">商品详情</a>
     </div>
 
     <div class="goods_detail_con clearfix">
-        <div class="goods_detail_pic fl"><img src="{{ sku.default_image.url }}"></div>
+        <div class="goods_detail_pic fl">
+            <img height="300px" width="300px"
+                 src="{{ sku.default_image.url }}"></div>
 
         <div class="goods_detail_list fr">
             <h3>{{ sku.name }}</h3>
@@ -50,29 +53,36 @@
 
             {# 其他规格商品显示 #}
             {% if other_skus %}
-            <div>
-                <p>其他规格:</p>
-                <ul>
-                    {% for sku in other_skus %}
-                        <li><a href="{% url 'goods:detail' sku.id %}" style="text-decoration:none">{{ sku.name}}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
+                <div>
+                    <p>其他规格:</p>
+                    <ul>
+                        {% for sku in other_skus %}
+                            <li><a href="{% url 'goods:detail' sku.id %}"
+                                   style="text-decoration:none">{{ sku.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
             {% endif %}
 
-            <div class="goods_num clearfix">
-                <div class="num_name fl">数 量：</div>
-                <div class="num_add fl">
-                    <input type="text" class="num_show fl" value="1">
-                    <a href="javascript:;" class="add fr">+</a>
-                    <a href="javascript:;" class="minus fr">-</a>
+            <form method="post" action="{% url 'orders:place' %}">
+                {% csrf_token %}
+                <input type="hidden" name="sku_ids" value="{{ sku.id }}">
+                <div class="goods_num clearfix">
+                    <div class="num_name fl">数 量：</div>
+                    <div class="num_add fl">
+                        <input type="text" class="num_show fl" name="count" value="1">
+                        <a href="javascript:;" class="add fr">+</a>
+                        <a href="javascript:;" class="minus fr">-</a>
+                    </div>
                 </div>
-            </div>
-            <div class="total">总价：<em>{{ sku.price }} 元</em></div>
-            <div class="operate_btn">
-                <a href="javascript:;" class="buy_btn">立即购买</a>
-                <a href="javascript:;" class="add_cart" id="add_cart">加入购物车</a>
-            </div>
+                <div class="total">总价：<em>{{ sku.price }} 元</em></div>
+                <div class="operate_btn">
+                    <input type="submit" class="buy_btn" value="立即购买">
+                    <a href="javascript:;" class="add_cart" id="add_cart" sku_id="{{ sku.id }}">加入购物车</a>
+                </div>
+            </form>
+
+
         </div>
     </div>
 
@@ -85,7 +95,8 @@
                     {# 显示当前类别下的新品 #}
                     {% for new_sku in new_skus %}
                         <li>
-                            <a href="{% url 'goods:detail' sku.id %}"><img src="{{ new_sku.default_image.url }}"></a>
+                            <a href="{% url 'goods:detail' new_sku.id %}"><img
+                                    src="{{ new_sku.default_image.url }}"></a>
                             <h4><a href="#">{{ new_sku.name }}</a></h4>
                             <div class="prize">￥{{ new_sku.price }}</div>
                         </li>
@@ -114,11 +125,74 @@
 {% endblock %}
 
 {% block bottom_js %}
+    {% load staticfiles %}
+    {% csrf_token %}
 
     <div class="add_jump"></div>
 
-    <script type="text/javascript" src="js/jquery-1.12.2.js"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-1.12.4.min.js' %}"></script>
     <script type="text/javascript">
+        update_goods_info();
+
+        function update_goods_info() {
+            var count = $('.num_show').val();
+            var price = $('.show_pirze').children('em').text();
+            var amount = parseInt(count) * parseFloat(price);
+            $('.total').children('em').html(amount.toFixed(2) + '元');
+        };
+
+        $('.add').click(function () {
+            var count = $('.num_show').val();
+            count = parseInt(count);
+            count++;
+            $('.num_show').val(count);
+            update_goods_info();
+        });
+
+        $('.minus').click(function () {
+            var count = $('.num_show').val();
+            count = parseInt(count);
+            if (count > 1) {
+                count--;
+                $('.num_show').val(count);
+                update_goods_info();
+            }
+
+        });
+
+        $('.num_show').blur(function () {
+            var count = $('.num_show').val();
+            if (parseInt(count) < 1 || count.trim().length == 0 || isNaN(count)) {
+                count = 1;
+            }
+            $('.num_show').val(parseInt(count));
+            update_goods_info();
+        });
+
+        $('#add_cart').click(function () {
+            var count = $('.num_show').val();
+            var sku_id = $(this).attr('sku_id')
+            var csrf = $('input[name="csrfmiddlewaretoken"]').val();
+            {#            alert(count + '====' + sku_id)#}
+
+            var params = {
+                sku_id: sku_id,
+                count: count,
+                csrfmiddlewaretoken: csrf
+            };
+
+            $.post('/cart/add', params, function (date) {
+                if (date.code == 0) {
+                    var total_count = date.total_count;
+
+                    $('#show_count').html(total_count);
+                } else {
+                    alert(date.errmsg)
+                }
+            });
+        });
+
+
         var $add_x = $('#add_cart').offset().top;
         var $add_y = $('#add_cart').offset().left;
 
@@ -133,7 +207,7 @@
                 },
                 "fast", function () {
                     $(".add_jump").fadeOut('fast', function () {
-                        $('#show_count').html(2);
+                        $('#show_count').html();
                     });
 
                 });
